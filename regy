@@ -1,0 +1,65 @@
+#!/usr/bin/bash
+
+#remove the following line and set 'roficonf' to your config.rasi
+#to use without athanasius
+ . $AWMdir/themes/current.conf # for use with athanasius
+
+Datediff(){
+    first_date=$(date "+%s")
+    second_date=$(date -d "$(tail -1 $HOME/.local/regy/datelist)" "+%s")
+    datediff=$(( $second_date - $first_date ))
+if [[ $datediff -lt 2678400 ]] ; then  #equivalent to 31 days
+    Gendates
+fi
+}
+
+Gendates(){
+rm "$HOME/.local/regy/datelist" && touch "$HOME/.local/regy/datelist"
+today=$(date "+%D")
+numofdays="1"
+while [[ $numofdays -lt 121 ]]; do
+    newdate=$(date -d "$today + $numofdays day" "+%b %d %Y")
+    echo $newdate
+    numofdays=$(($numofdays + 1))
+done > "$HOME/.local/regy/datelist"
+}
+
+Info(){
+    cal | sed "s/ $day /|$day|/"
+    cat "$HOME/.local/regy/todo"
+}
+
+Addevent(){
+eventdate=$(cat "$HOME/.local/regy/datelist" | rofi -dmenu -p "" -i -theme $roficonf)
+if [[ -z $eventdate ]] ; then
+echo "none selected"
+exit 1
+fi
+eventtime=$(rofi -dmenu -p "Event Time:" -theme $roficonf)
+eventdesc=$(rofi -dmenu -p "Event Description:" -theme $roficonf)
+
+echo -e "[$eventdate,$eventtime] $eventdesc" >> "$HOME/.local/regy/todo"
+}
+
+Clean(){
+    old=$(date -d "7 days ago" "+%s")
+    linenum="1"
+    deletelines=""
+while IFS= read -r line
+do
+  seconds=$(date -d "${line:1:11}" "+%s")
+  if [[ $seconds -lt $old ]] ; then
+  deletelines+="$linenum "
+  fi
+linenum=$(( $linenum + 1 ))
+done < "$HOME/.local/regy/todo"
+
+for deletion in $deletelines ; do
+sed -i "${deletion}d" "$HOME/.local/regy/todo"
+done
+}
+
+Datediff
+day=$(date "+%d")
+herbe "$(Info)" && Addevent
+Clean
