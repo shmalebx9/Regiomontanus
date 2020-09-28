@@ -29,11 +29,19 @@ Info(){
     cat "$HOME/.local/regy/todo"
 }
 
+DeleteEvent(){
+    eventdelstring=$(cat "$HOME/.local/regy/todo" | rofi -dmenu -p "Delete Event:" -i -theme $roficonf)
+    sed -i "/${eventdelstring:1:12}/d" "$HOME/.local/regy/todo"
+}
+
 Addevent(){
 eventdate=$(cat "$HOME/.local/regy/datelist" | rofi -dmenu -p "" -i -theme $roficonf)
 if [[ -z $eventdate ]] ; then
 echo "none selected"
 exit 1
+elif [[ $eventdate = "delete" ]] ; then
+    DeleteEvent
+    return 0
 fi
 eventtime=$(rofi -dmenu -p "Event Time:" -theme $roficonf)
 eventdesc=$(rofi -dmenu -p "Event Description:" -theme $roficonf)
