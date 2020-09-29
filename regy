@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-#remove the following line and set 'roficonf' to your config.rasi
+#remove the following line replace config
 #to use without athanasius
  . $AWMdir/themes/current.conf # for use with athanasius
 
@@ -25,7 +25,7 @@ done > "$HOME/.local/regy/datelist"
 }
 
 Info(){
-    cal | sed "s/ $day /|$day|/"
+    cal -n 2 | sed "s/ $day /|$day|/"
     cat "$HOME/.local/regy/todo"
 }
 
@@ -49,11 +49,25 @@ eventdesc=$(rofi -dmenu -p "Event Description:" -theme $roficonf)
 echo -e "[$eventdate,$eventtime] $eventdesc" >> "$HOME/.local/regy/todo"
 }
 
+Sort(){
+touch /tmp/sortregy
+IFS=','
+while read -r line ; do
+    sortsec=$(date -d "${line:1:11}" "+%s")
+    echo $sortsec${line:13}
+done > /tmp/sortregy
+
+sort -k1 /tmp/sortregy | while read -r line ; do
+    sortdate=$(date -d "@${line:0:10}" "+%b %d %Y")
+    echo "[$sortdate,${line:10}"
+done > "$HOME/.local/regy/todo"
+}
+
 Clean(){
     old=$(date -d "7 days ago" "+%s")
     linenum="1"
     deletelines=""
-while IFS= read -r line
+while read -r line
 do
   seconds=$(date -d "${line:1:11}" "+%s")
   if [[ $seconds -lt $old ]] ; then
@@ -71,3 +85,4 @@ Datediff
 day=$(date "+%d")
 herbe "$(Info)" && Addevent
 Clean
+Sort < "$HOME/.local/regy/todo"
